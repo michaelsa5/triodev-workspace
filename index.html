@@ -4,19 +4,37 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>TrioDev Workspace</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
+    :root {
+      --bg-dark: #09090b;
+      --card-bg: #141417;
+      --border-color: #27272a;
+      --text-main: #f4f4f5;
+      --text-muted: #a1a1aa;
+      --accent: #3b82f6;
+      --accent-hover: #2563eb;
+      --success: #22c55e;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+    }
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
-    body { background-color: #09090b; color: #f4f4f5; min-height: 100vh; display: flex; flex-direction: column; }
+    body { background-color: var(--bg-dark); color: var(--text-main); min-height: 100vh; display: flex; flex-direction: column; }
     header { background: #141417; border-bottom: 1px solid #27272a; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; }
+    .logo-area { display: flex; align-items: center; gap: 12px; }
     h1 { font-size: 1.25rem; font-weight: 700; color: #f4f4f5; }
-    .badge { background: #27272a; color: #3b82f6; padding: 0.25rem 0.6rem; border-radius: 4px; font-size: 0.8rem; border: 1px solid #3b82f6; }
+    .badge-status { display: inline-flex; align-items: center; gap: 6px; background: rgba(34, 197, 94, 0.15); border: 1px solid rgba(34, 197, 94, 0.3); color: #4ade80; padding: 0.35rem 0.75rem; border-radius: 9999px; font-size: 0.8rem; font-weight: 600; }
+    .dot { width: 8px; height: 8px; background-color: #22c55e; border-radius: 50%; box-shadow: 0 0 8px #22c55e; }
     .nav-tabs { display: flex; gap: 1rem; border-bottom: 1px solid #27272a; padding: 0 2rem; background: #141417; }
     .tab-btn { background: none; border: none; color: #a1a1aa; padding: 0.8rem 1rem; font-weight: 600; cursor: pointer; border-bottom: 2px solid transparent; }
     .tab-btn.active { color: #3b82f6; border-bottom-color: #3b82f6; }
     .container { padding: 2rem; flex: 1; max-width: 1400px; margin: 0 auto; width: 100%; }
+    .view-section { display: none; }
+    .view-section.active { display: block; }
     .card { background: #141417; border: 1px solid #27272a; border-radius: 8px; padding: 1.5rem; margin-bottom: 1.5rem; }
-    .card-title { font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem; color: #f4f4f5; display: flex; justify-content: space-between; align-items: center; }
-    .btn { background: #3b82f6; color: #fff; border: none; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; font-weight: 500; font-size: 0.9rem; }
+    .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+    .card-title { font-size: 1.1rem; font-weight: 600; color: #f4f4f5; }
+    .btn { background: #3b82f6; color: #fff; border: none; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; font-weight: 500; transition: 0.2s; font-size: 0.875rem; }
     .btn:hover { background: #2563eb; }
     .btn-secondary { background: #27272a; color: #f4f4f5; }
     .btn-secondary:hover { background: #3f3f46; }
@@ -24,571 +42,457 @@
     .btn-danger:hover { background: #dc2626; }
     .btn-success { background: #22c55e; color: #fff; }
     .btn-success:hover { background: #16a34a; }
-    .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; }
+    .btn-sm { padding: 0.25rem 0.5rem; font-size: 0.75rem; }
+    .kanban-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-top: 1rem; }
+    .kanban-col { background: #18181b; border: 1px solid #27272a; border-radius: 8px; padding: 1rem; min-height: 500px; display: flex; flex-direction: column; }
+    .kanban-col-header { font-size: 0.95rem; font-weight: 700; color: #a1a1aa; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid #27272a; display: flex; justify-content: space-between; align-items: center; }
+    .kanban-cards { flex: 1; display: flex; flex-direction: column; gap: 0.75rem; }
+    .task-card { background: #27272a; border: 1px solid #3f3f46; border-radius: 6px; padding: 1rem; cursor: grab; transition: transform 0.15s; }
+    .task-card:active { cursor: grabbing; transform: scale(0.98); }
+    .task-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem; }
+    .task-title { font-weight: 600; font-size: 0.95rem; }
+    .task-tag { font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; background: #3f3f46; color: #60a5fa; font-weight: 600; }
+    .task-meta { font-size: 0.8rem; color: #a1a1aa; margin-top: 0.5rem; display: flex; flex-direction: column; gap: 4px; }
+    .task-actions { display: flex; gap: 4px; margin-top: 0.75rem; justify-content: space-between; align-items: center; }
+    .subtasks-list { margin-top: 0.5rem; display: flex; flex-direction: column; gap: 4px; }
+    .subtask-item { font-size: 0.8rem; color: #d4d4d8; display: flex; align-items: center; gap: 6px; cursor: pointer; }
     .form-group { margin-bottom: 1rem; }
     label { display: block; font-size: 0.85rem; color: #a1a1aa; margin-bottom: 0.4rem; }
-    input, select, textarea { width: 100%; background: #09090b; border: 1px solid #27272a; color: #f4f4f5; padding: 0.6rem; border-radius: 6px; font-size: 0.9rem; }
+    input, select, textarea { width: 100%; background: #09090b; border: 1px solid #27272a; color: #f4f4f5; padding: 0.5rem 0.75rem; border-radius: 6px; font-size: 0.9rem; }
     input:focus, select:focus, textarea:focus { outline: none; border-color: #3b82f6; }
-    .overlay { position: fixed; inset: 0; background: rgba(9, 9, 11, 0.9); display: flex; justify-content: center; align-items: center; z-index: 1000; }
-    .modal { background: #141417; border: 1px solid #27272a; border-radius: 12px; padding: 2rem; width: 100%; max-width: 450px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5); }
-    .member-card { background: #09090b; border: 1px solid #27272a; border-radius: 6px; padding: 1rem; }
-    .member-card.active-member { border-color: #3b82f6; }
-    .project-card { background: #09090b; border: 1px solid #27272a; border-radius: 8px; padding: 1.25rem; margin-bottom: 1rem; }
-    .vote-box { display: flex; gap: 0.5rem; align-items: center; margin-top: 0.8rem; background: #141417; padding: 0.75rem; border-radius: 6px; }
-    .kanban-board { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; min-height: 500px; }
-    .kanban-col { background: #141417; border: 1px solid #27272a; border-radius: 8px; padding: 1rem; display: flex; flex-direction: column; }
-    .col-header { font-weight: 600; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid #27272a; display: flex; justify-content: space-between; align-items: center; }
-    .task-list { flex: 1; display: flex; flex-direction: column; gap: 0.75rem; }
-    .task-card { background: #09090b; border: 1px solid #27272a; border-radius: 6px; padding: 0.85rem; cursor: grab; }
-    .cat-tag { display: inline-block; font-size: 0.7rem; padding: 0.2rem 0.5rem; border-radius: 4px; font-weight: 600; text-transform: uppercase; margin-bottom: 0.4rem; }
-    .cat-API { background: #3b82f622; color: #60a5fa; border: 1px solid #3b82f644; }
-    .cat-Backend { background: #a855f722; color: #c084fc; border: 1px solid #a855f744; }
-    .cat-Frontend { background: #ec489922; color: #f472b6; border: 1px solid #ec489944; }
-    .cat-Banco { background: #f59e0b22; color: #fbbf24; border: 1px solid #f59e0b44; }
-    .cat-Data { background: #10b98122; color: #34d399; border: 1px solid #10b98144; }
-    .cat-DevOps { background: #06b6d422; color: #22d3ee; border: 1px solid #06b6d444; }
-    .hidden { display: none !important; }
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: none; justify-content: center; align-items: center; z-index: 100; }
+    .modal-overlay.active { display: flex; }
+    .modal { background: #141417; border: 1px solid #27272a; border-radius: 8px; padding: 1.5rem; width: 100%; max-width: 550px; max-height: 90vh; overflow-y: auto; }
+    .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; }
+    .progress-bar-bg { background: #27272a; height: 10px; border-radius: 5px; overflow: hidden; margin-top: 6px; }
+    .progress-bar-fill { background: #3b82f6; height: 100%; width: 0%; transition: width 0.3s; }
   </style>
 </head>
 <body>
-  <div id="lockScreen" class="overlay">
-    <div class="modal">
-      <h2 style="margin-bottom: 1rem; text-align: center;">TrioDev Workspace</h2>
-      <p style="color: #a1a1aa; font-size: 0.9rem; text-align: center; margin-bottom: 1.5rem;">Selecione seu perfil e digite seu PIN de segurança</p>
-      <div class="form-group">
-        <label>Membro Autorizado</label>
-        <select id="loginMemberSelect"></select>
-      </div>
-      <div class="form-group">
-        <label>PIN de Segurança</label>
-        <input type="password" id="loginPinInput" maxlength="8" placeholder="Digite o PIN">
-      </div>
-      <div id="loginError" style="color: #ef4444; font-size: 0.85rem; margin-bottom: 1rem; display: none;">PIN incorreto. Tente novamente.</div>
-      <button class="btn" style="width: 100%;" onclick="unlockSession()">Desbloquear / Entrar</button>
-    </div>
-  </div>
-
-  <div id="jsonModal" class="overlay hidden">
-    <div class="modal" style="max-width: 650px;">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-        <h3>Exportar / Importar Estado (JSON)</h3>
-        <button class="btn btn-secondary" onclick="closeJsonModal()">✕</button>
-      </div>
-      <div class="form-group">
-        <label>Dados em JSON</label>
-        <textarea id="jsonArea" rows="12" style="font-family: monospace; font-size: 0.8rem;"></textarea>
-      </div>
-      <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
-        <button class="btn btn-secondary" onclick="copyJsonText()">Copiar JSON</button>
-        <button class="btn btn-success" onclick="importJsonData()">Importar Estado</button>
-      </div>
-    </div>
-  </div>
-
-  <div id="memberConfigModal" class="overlay hidden">
-    <div class="modal" style="max-width: 550px;">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-        <h3>Configurar Membros do TrioDev</h3>
-        <button class="btn btn-secondary" onclick="closeMemberModal()">✕</button>
-      </div>
-      <div id="memberFormList"></div>
-      <button class="btn" style="width: 100%; margin-top: 1rem;" onclick="saveMembersConfig()">Salvar Alterações</button>
-    </div>
-  </div>
-
   <header>
-    <div style="display: flex; align-items: center; gap: 1rem;">
+    <div class="logo-area">
       <h1>TrioDev Workspace</h1>
-      <span class="badge">Governança & Engenharia</span>
-    </div>
-    <div style="display: flex; align-items: center; gap: 1rem;">
-      <span id="currentSessionBadge" style="font-size: 0.9rem; color: #a1a1aa;"></span>
-      <button class="btn btn-secondary" onclick="openMemberModal()">Gerenciar Membros</button>
-      <button class="btn btn-secondary" onclick="openJsonModal()">JSON State</button>
-      <button class="btn btn-danger" onclick="lockSession()">Bloquear</button>
+      <span class="badge-status" id="supabase-status"><span class="dot"></span> Supabase Realtime Conectado</span>
     </div>
   </header>
-
   <nav class="nav-tabs">
-    <button class="tab-btn active" onclick="switchTab('deliberation')">Propostas & Deliberação</button>
-    <button class="tab-btn" onclick="switchTab('kanban')">Quadro de Engenharia (Kanban)</button>
+    <button class="tab-btn active" onclick="switchTab('projects-view', event)">Projetos & Propostas</button>
+    <button class="tab-btn" onclick="switchTab('kanban-view', event)">Quadro de Engenharia</button>
+    <button class="tab-btn" onclick="switchTab('metrics-view', event)">Métricas & Produtividade</button>
   </nav>
-
   <main class="container">
-    <section id="tab-deliberation">
-      <div class="grid-3">
-        <div class="card" style="grid-column: span 1;">
-          <h2 class="card-title">Propor Novo Projeto</h2>
-          <form id="projectForm" onsubmit="createProject(event)">
+    <section id="projects-view" class="view-section active">
+      <div class="card">
+        <div class="card-header"><h2 class="card-title">Propor Novo Projeto / Frente de Engenharia</h2></div>
+        <form id="project-form" onsubmit="handleProposeProject(event)">
+          <div style="display:grid; grid-template-columns: 2fr 1fr 1fr; gap: 1rem;">
             <div class="form-group">
               <label>Nome do Projeto</label>
-              <input type="text" id="projTitle" required placeholder="Ex: API de Autenticação OAuth2">
+              <input type="text" id="proj-title" placeholder="Ex: API Gateway Microservices" required>
             </div>
             <div class="form-group">
-              <label>Descrição</label>
-              <textarea id="projDesc" rows="3" required placeholder="Descreva os objetivos e escopo do projeto..."></textarea>
-            </div>
-            <div class="form-group">
-              <label>Quórum Exigido para Aprovação</label>
-              <select id="projQuorum">
-                <option value="2/3">Maioria Simples (2 / 3 membros)</option>
-                <option value="3/3">Unanimidade (3 / 3 membros)</option>
+              <label>Frente de Engenharia</label>
+              <select id="proj-area" required>
+                <option value="API">API</option>
+                <option value="Backend">Backend</option>
+                <option value="Frontend">Frontend</option>
+                <option value="Banco de Dados">Banco de Dados</option>
+                <option value="Data / ML">Data / ML</option>
+                <option value="DevOps">DevOps</option>
               </select>
             </div>
-            <button type="submit" class="btn" style="width: 100%;">Submeter Proposta</button>
-          </form>
-        </div>
-
-        <div class="card" style="grid-column: span 2;">
-          <h2 class="card-title">Painel de Deliberação e Votação</h2>
-          <div id="proposalsList">
-            <p style="color: #a1a1aa; font-size: 0.9rem;">Nenhuma proposta cadastrada ainda.</p>
+            <div class="form-group">
+              <label>Responsável Principal</label>
+              <select id="proj-owner" required>
+                <option value="Membro 1">Membro 1</option>
+                <option value="Membro 2">Membro 2</option>
+                <option value="Membro 3">Membro 3</option>
+              </select>
+            </div>
           </div>
+          <div class="form-group">
+            <label>Descrição do Projeto</label>
+            <textarea id="proj-desc" rows="2" placeholder="Detalhes da proposta..." required></textarea>
+          </div>
+          <button type="submit" class="btn">Submeter Proposta</button>
+        </form>
+      </div>
+      <div class="card">
+        <div class="card-header"><h2 class="card-title">Propostas em Votação & Projetos Ativos</h2></div>
+        <div id="projects-list" style="display:flex; flex-direction:column; gap:1rem;"></div>
+      </div>
+    </section>
+    <section id="kanban-view" class="view-section">
+      <div class="card">
+        <div class="card-header"><h2 class="card-title">Nova Tarefa de Engenharia</h2></div>
+        <form id="task-form" onsubmit="handleCreateTask(event)">
+          <div style="display:grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 1rem;">
+            <div class="form-group">
+              <label>Título da Tarefa</label>
+              <input type="text" id="task-title" placeholder="Ex: Configurar Swagger / Open API" required>
+            </div>
+            <div class="form-group">
+              <label>Frente de Engenharia</label>
+              <select id="task-area" required>
+                <option value="API">API</option>
+                <option value="Backend">Backend</option>
+                <option value="Frontend">Frontend</option>
+                <option value="Banco de Dados">Banco de Dados</option>
+                <option value="Data / ML">Data / ML</option>
+                <option value="DevOps">DevOps</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Projeto Relacionado</label>
+              <select id="task-project" required></select>
+            </div>
+            <div class="form-group">
+              <label>Responsável</label>
+              <select id="task-owner" required>
+                <option value="Membro 1">Membro 1</option>
+                <option value="Membro 2">Membro 2</option>
+                <option value="Membro 3">Membro 3</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Branch / Pull Request Link</label>
+            <input type="text" id="task-pr" placeholder="feature/api-gateway ou https://github.com/...">
+          </div>
+          <div class="form-group">
+            <label>Subtarefas (separadas por vírgula)</label>
+            <input type="text" id="task-subtasks" placeholder="Criar rotas, Adicionar testes, Documentar">
+          </div>
+          <button type="submit" class="btn">Adicionar Tarefa ao Kanban</button>
+        </form>
+      </div>
+      <div class="kanban-grid">
+        <div class="kanban-col" ondragover="allowDrop(event)" ondrop="handleDrop(event, 'Implementar')">
+          <div class="kanban-col-header"><span>Implementar</span><span id="count-Implementar" class="task-tag">0</span></div>
+          <div id="col-Implementar" class="kanban-cards"></div>
+        </div>
+        <div class="kanban-col" ondragover="allowDrop(event)" ondrop="handleDrop(event, 'Inconcluído')">
+          <div class="kanban-col-header"><span>Inconcluído</span><span id="count-Inconcluído" class="task-tag">0</span></div>
+          <div id="col-Inconcluído" class="kanban-cards"></div>
+        </div>
+        <div class="kanban-col" ondragover="allowDrop(event)" ondrop="handleDrop(event, 'Para Análise')">
+          <div class="kanban-col-header"><span>Para Análise</span><span id="count-Para Análise" class="task-tag">0</span></div>
+          <div id="col-Para Análise" class="kanban-cards"></div>
+        </div>
+        <div class="kanban-col" ondragover="allowDrop(event)" ondrop="handleDrop(event, 'Concluído')">
+          <div class="kanban-col-header"><span>Concluído</span><span id="count-Concluído" class="task-tag">0</span></div>
+          <div id="col-Concluído" class="kanban-cards"></div>
         </div>
       </div>
     </section>
-
-    <section id="tab-kanban" class="hidden">
-      <div class="card">
-        <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 1rem;">
-          <div>
-            <label>Projeto Aprovado Selecionado</label>
-            <select id="kanbanProjectSelect" style="min-width: 250px;" onchange="renderKanban()"></select>
-          </div>
-          <div>
-            <label>Filtrar por Categoria</label>
-            <select id="kanbanCategoryFilter" onchange="renderKanban()">
-              <option value="ALL">Todas as Categorias</option>
-              <option value="API">API</option>
-              <option value="Backend">Backend</option>
-              <option value="Frontend">Frontend</option>
-              <option value="Banco de Dados">Banco de Dados</option>
-              <option value="Data / ML">Data / ML</option>
-              <option value="DevOps">DevOps</option>
-            </select>
-          </div>
-          <button class="btn btn-success" onclick="openAddTaskModal()">+ Nova Tarefa Técnica</button>
-        </div>
-      </div>
-
-      <div id="addTaskCard" class="card hidden">
-        <h3 class="card-title">Adicionar Tarefa Técnica</h3>
-        <form onsubmit="createTask(event)" style="display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 1rem; align-items: end;">
-          <div class="form-group" style="margin: 0;">
-            <label>Título da Tarefa</label>
-            <input type="text" id="taskTitle" required placeholder="Ex: Criar endpoints de login e refresh token">
-          </div>
-          <div class="form-group" style="margin: 0;">
-            <label>Categoria</label>
-            <select id="taskCategory">
-              <option value="API">API</option>
-              <option value="Backend">Backend</option>
-              <option value="Frontend">Frontend</option>
-              <option value="Banco de Dados">Banco de Dados</option>
-              <option value="Data / ML">Data / ML</option>
-              <option value="DevOps">DevOps</option>
-            </select>
-          </div>
-          <div class="form-group" style="margin: 0;">
-            <label>Estado Inicial</label>
-            <select id="taskColumn">
-              <option value="Implementar">Implementar</option>
-              <option value="Inconcluído">Inconcluído</option>
-              <option value="Para Análise">Para Análise</option>
-              <option value="Concluído">Concluído</option>
-            </select>
-          </div>
-          <button type="submit" class="btn">Salvar Tarefa</button>
-        </form>
-      </div>
-
-      <div class="kanban-board">
-        <div class="kanban-col">
-          <div class="col-header">
-            <span>Implementar</span>
-            <span id="count-Implementar" class="badge">0</span>
-          </div>
-          <div id="col-Implementar" class="task-list"></div>
-        </div>
-        <div class="kanban-col">
-          <div class="col-header">
-            <span>Inconcluído</span>
-            <span id="count-Inconcluído" class="badge">0</span>
-          </div>
-          <div id="col-Inconcluído" class="task-list"></div>
-        </div>
-        <div class="kanban-col">
-          <div class="col-header">
-            <span>Para Análise</span>
-            <span id="count-Para Análise" class="badge">0</span>
-          </div>
-          <div id="col-Para Análise" class="task-list"></div>
-        </div>
-        <div class="kanban-col">
-          <div class="col-header">
-            <span>Concluído</span>
-            <span id="count-Concluído" class="badge">0</span>
-          </div>
-          <div id="col-Concluído" class="task-list"></div>
-        </div>
+    <section id="metrics-view" class="view-section">
+      <div class="metrics-grid">
+        <div class="card"><h3 class="card-title" style="margin-bottom:1rem;">Progresso por Projeto</h3><div id="metrics-projects"></div></div>
+        <div class="card"><h3 class="card-title" style="margin-bottom:1rem;">Progresso por Frente de Engenharia</h3><div id="metrics-areas"></div></div>
+        <div class="card"><h3 class="card-title" style="margin-bottom:1rem;">Carga por Membro</h3><div id="metrics-members"></div></div>
       </div>
     </section>
   </main>
-
+  <div id="review-modal" class="modal-overlay">
+    <div class="modal">
+      <div class="card-header">
+        <h3 class="card-title" id="modal-task-title">Code Review</h3>
+        <button class="btn btn-secondary btn-sm" onclick="closeModal()">✕</button>
+      </div>
+      <div id="modal-task-details" style="font-size:0.85rem; color:#a1a1aa; margin-bottom:1rem;"></div>
+      <div class="card" style="background:#09090b; padding:1rem; margin-bottom:1rem;">
+        <h4 style="font-size:0.9rem; margin-bottom:0.5rem; color:#f4f4f5;">Comentários de Review</h4>
+        <div id="review-comments-list" style="display:flex; flex-direction:column; gap:0.5rem; max-height:200px; overflow-y:auto; margin-bottom:1rem;"></div>
+        <div style="display:flex; gap:0.5rem;">
+          <input type="text" id="new-comment-input" placeholder="Escrever comentário de Code Review...">
+          <button class="btn btn-sm" onclick="handleAddComment()">Enviar</button>
+        </div>
+      </div>
+      <div style="display:flex; justify-content:flex-end; gap:0.5rem;">
+        <button class="btn btn-secondary" onclick="closeModal()">Fechar</button>
+      </div>
+    </div>
+  </div>
   <script>
-    const DEFAULT_MEMBERS = [
-      { id: 1, name: "Michael Santos", role: "Líder Técnico & Engenheiro", github: "michaelsa5", pin: "1234" },
-      { id: 2, name: "Membro 2", role: "Desenvolvedor Backend", github: "membro2", pin: "1234" },
-      { id: 3, name: "Membro 3", role: "Desenvolvedor Frontend / QA", github: "membro3", pin: "1234" }
-    ];
-
-    let state = {
-      members: JSON.parse(localStorage.getItem('triodev_members')) || DEFAULT_MEMBERS,
-      currentMemberId: null,
-      projects: JSON.parse(localStorage.getItem('triodev_projects')) || [],
-      tasks: JSON.parse(localStorage.getItem('triodev_tasks')) || []
-    };
-
-    function saveState() {
-      localStorage.setItem('triodev_members', JSON.stringify(state.members));
-      localStorage.setItem('triodev_projects', JSON.stringify(state.projects));
-      localStorage.setItem('triodev_tasks', JSON.stringify(state.tasks));
+    const SUPABASE_SUBDOMAIN = 'vsfiteyjjyvxsseaorvn';
+    const SUPABASE_URL = 'https://' + SUPABASE_SUBDOMAIN + '.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_dtt0-J1fW-HGD8uFD6najg_BSWXYoK5';
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const COLS = ["Implementar", "Inconcluído", "Para Análise", "Concluído"];
+    const AREAS = ["API", "Backend", "Frontend", "Banco de Dados", "Data / ML", "DevOps"];
+    const MEMBERS = ["Membro 1", "Membro 2", "Membro 3"];
+    let state = { projects: [], tasks: [] };
+    let activeReviewTaskId = null;
+    async function loadStateFromSupabase() {
+      try {
+        const { data, error } = await supabase.from('triodev_workspace').select('*').eq('id', 'main').single();
+        if (!error && data) {
+          if (data.content) state = typeof data.content === 'string' ? JSON.parse(data.content) : data.content;
+          else if (data.projects || data.tasks) state = { projects: data.projects || [], tasks: data.tasks || [] };
+          renderAll();
+        }
+      } catch (err) { console.error("Error loading state:", err); }
     }
-
-    function init() {
-      populateLoginMemberSelect();
-      renderProposals();
-      renderKanbanProjectSelect();
+    async function saveStateToSupabase() {
+      try {
+        await supabase.from('triodev_workspace').upsert({ id: 'main', content: state, updated_at: new Date().toISOString() }, { onConflict: 'id' });
+      } catch (err) { console.error("Error saving state:", err); }
     }
-
-    function populateLoginMemberSelect() {
-      const select = document.getElementById('loginMemberSelect');
-      select.innerHTML = state.members.map(m => `<option value="${m.id}">${m.name} (${m.role})</option>`).join('');
+    function setupRealtime() {
+      supabase.channel('public:triodev_workspace').on('postgres_changes', { event: '*', schema: 'public', table: 'triodev_workspace' }, () => { loadStateFromSupabase(); }).subscribe();
+      setInterval(loadStateFromSupabase, 4000);
     }
-
-    function unlockSession() {
-      const selectedId = parseInt(document.getElementById('loginMemberSelect').value);
-      const pin = document.getElementById('loginPinInput').value;
-      const member = state.members.find(m => m.id === selectedId);
-
-      if (member && member.pin === pin) {
-        state.currentMemberId = selectedId;
-        document.getElementById('loginError').style.display = 'none';
-        document.getElementById('lockScreen').classList.add('hidden');
-        document.getElementById('loginPinInput').value = '';
-        updateSessionBadge();
-        renderProposals();
-      } else {
-        document.getElementById('loginError').style.display = 'block';
-      }
+    function switchTab(viewId, evt) {
+      document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+      document.getElementById(viewId).classList.add('active');
+      if (evt && evt.target) evt.target.classList.add('active');
+      if (viewId === 'metrics-view') renderMetrics();
     }
-
-    function lockSession() {
-      state.currentMemberId = null;
-      document.getElementById('lockScreen').classList.remove('hidden');
-    }
-
-    function updateSessionBadge() {
-      const member = state.members.find(m => m.id === state.currentMemberId);
-      if (member) {
-        document.getElementById('currentSessionBadge').innerHTML = `Sessão ativa: <strong>${member.name}</strong> (@${member.github})`;
-      }
-    }
-
-    function switchTab(tab) {
-      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-      if (tab === 'deliberation') {
-        document.querySelectorAll('.tab-btn')[0].classList.add('active');
-        document.getElementById('tab-deliberation').classList.remove('hidden');
-        document.getElementById('tab-kanban').classList.add('hidden');
-        renderProposals();
-      } else {
-        document.querySelectorAll('.tab-btn')[1].classList.add('active');
-        document.getElementById('tab-deliberation').classList.add('hidden');
-        document.getElementById('tab-kanban').classList.remove('hidden');
-        renderKanbanProjectSelect();
-        renderKanban();
-      }
-    }
-
-    function createProject(e) {
+    function handleProposeProject(e) {
       e.preventDefault();
-      const title = document.getElementById('projTitle').value.trim();
-      const description = document.getElementById('projDesc').value.trim();
-      const quorum = document.getElementById('projQuorum').value;
-
       const newProj = {
         id: 'proj_' + Date.now(),
-        title,
-        description,
-        quorum,
-        authorId: state.currentMemberId,
-        votes: {},
-        status: 'Em Votação',
-        createdAt: new Date().toLocaleDateString('pt-BR')
+        title: document.getElementById('proj-title').value.trim(),
+        area: document.getElementById('proj-area').value,
+        owner: document.getElementById('proj-owner').value,
+        desc: document.getElementById('proj-desc').value.trim(),
+        votes: { 'Membro 1': null, 'Membro 2': null, 'Membro 3': null },
+        status: 'votacao'
       };
-
       state.projects.push(newProj);
-      saveState();
-      document.getElementById('projectForm').reset();
-      renderProposals();
+      document.getElementById('project-form').reset();
+      saveStateToSupabase(); renderAll();
     }
-
-    function castVote(projId, vote) {
+    function voteProject(projId, member, approve) {
       const proj = state.projects.find(p => p.id === projId);
-      if (!proj || proj.status !== 'Em Votação') return;
-
-      proj.votes[state.currentMemberId] = vote;
-
-      const approvals = Object.values(proj.votes).filter(v => v === 'Aprovar').length;
-      const rejections = Object.values(proj.votes).filter(v => v === 'Reprovar').length;
-
-      const targetApprovals = proj.quorum === '2/3' ? 2 : 3;
-
-      if (approvals >= targetApprovals) {
-        proj.status = 'Aprovado';
-      } else if (rejections > (3 - targetApprovals)) {
-        proj.status = 'Reprovado';
-      }
-
-      saveState();
-      renderProposals();
+      if (!proj) return;
+      proj.votes[member] = approve;
+      const votesArr = Object.values(proj.votes);
+      const approves = votesArr.filter(v => v === true).length;
+      const rejects = votesArr.filter(v => v === false).length;
+      if (approves >= 2) proj.status = 'aprovado';
+      else if (rejects >= 2) proj.status = 'reprovado';
+      saveStateToSupabase(); renderAll();
     }
-
-    function renderProposals() {
-      const container = document.getElementById('proposalsList');
-      if (state.projects.length === 0) {
-        container.innerHTML = '<p style="color: #a1a1aa; font-size: 0.9rem;">Nenhuma proposta cadastrada ainda.</p>';
+    function handleCreateTask(e) {
+      e.preventDefault();
+      const subtasksRaw = document.getElementById('task-subtasks').value.split(',').map(s => s.trim()).filter(Boolean);
+      const newTask = {
+        id: 'task_' + Date.now(),
+        title: document.getElementById('task-title').value.trim(),
+        area: document.getElementById('task-area').value,
+        projectId: document.getElementById('task-project').value,
+        owner: document.getElementById('task-owner').value,
+        pr: document.getElementById('task-pr').value.trim(),
+        status: 'Implementar',
+        subtasks: subtasksRaw.map((st, i) => ({ id: i, text: st, done: false })),
+        comments: []
+      };
+      state.tasks.push(newTask);
+      document.getElementById('task-form').reset();
+      saveStateToSupabase(); renderAll();
+    }
+    function toggleSubtask(taskId, subId) {
+      const task = state.tasks.find(t => t.id === taskId);
+      if (task) {
+        const st = task.subtasks.find(s => s.id === subId);
+        if (st) st.done = !st.done;
+        saveStateToSupabase(); renderAll();
+      }
+    }
+    function moveTask(taskId, direction) {
+      const task = state.tasks.find(t => t.id === taskId);
+      if (!task) return;
+      const idx = COLS.indexOf(task.status);
+      if (direction === 'next' && idx < COLS.length - 1) task.status = COLS[idx + 1];
+      else if (direction === 'prev' && idx > 0) task.status = COLS[idx - 1];
+      saveStateToSupabase(); renderAll();
+    }
+    function handleDragStart(e, taskId) { e.dataTransfer.setData('text/plain', taskId); }
+    function allowDrop(e) { e.preventDefault(); }
+    function handleDrop(e, targetCol) {
+      e.preventDefault();
+      const taskId = e.dataTransfer.getData('text/plain');
+      const task = state.tasks.find(t => t.id === taskId);
+      if (task) { task.status = targetCol; saveStateToSupabase(); renderAll(); }
+    }
+    function openReviewModal(taskId) {
+      activeReviewTaskId = taskId;
+      const task = state.tasks.find(t => t.id === taskId);
+      if (!task) return;
+      document.getElementById('modal-task-title').textContent = 'Code Review: ' + task.title;
+      document.getElementById('modal-task-details').innerHTML = `
+        <strong>Frente:</strong> ${task.area} | <strong>Responsável:</strong> ${task.owner} <br>
+        <strong>PR / Branch:</strong> ${task.pr ? task.pr : 'Não informado'}
+      `;
+      renderComments();
+      document.getElementById('review-modal').classList.add('active');
+    }
+    function closeModal() {
+      document.getElementById('review-modal').classList.remove('active');
+      activeReviewTaskId = null;
+    }
+    function handleAddComment() {
+      const input = document.getElementById('new-comment-input');
+      const txt = input.value.trim();
+      if (!txt || !activeReviewTaskId) return;
+      const task = state.tasks.find(t => t.id === activeReviewTaskId);
+      if (task) {
+        task.comments.push({ text: txt, date: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) });
+        input.value = '';
+        saveStateToSupabase(); renderComments();
+      }
+    }
+    function renderComments() {
+      const task = state.tasks.find(t => t.id === activeReviewTaskId);
+      const container = document.getElementById('review-comments-list');
+      if (!task || !task.comments || !task.comments.length) {
+        container.innerHTML = '<span style="color:#a1a1aa; font-size:0.8rem;">Nenhum comentário ainda.</span>';
         return;
       }
-
-      container.innerHTML = state.projects.map(p => {
-        const author = state.members.find(m => m.id === p.authorId)?.name || 'Desconhecido';
-        const approvals = Object.values(p.votes).filter(v => v === 'Aprovar').length;
-        const rejections = Object.values(p.votes).filter(v => v === 'Reprovar').length;
-
-        let statusColor = '#3b82f6';
-        if (p.status === 'Aprovado') statusColor = '#22c55e';
-        if (p.status === 'Reprovado') statusColor = '#ef4444';
-
-        const myVote = p.votes[state.currentMemberId];
-
+      container.innerHTML = task.comments.map(c => `
+        <div style="background:#141417; padding:0.5rem 0.75rem; border-radius:4px; border:1px solid #27272a;">
+          <div style="font-size:0.85rem; color:#f4f4f5;">${c.text}</div>
+          <div style="font-size:0.7rem; color:#71717a; text-align:right;">${c.date}</div>
+        </div>
+      `).join('');
+    }
+    function renderAll() { renderProjects(); renderProjectSelect(); renderKanban(); renderMetrics(); }
+    function renderProjects() {
+      const list = document.getElementById('projects-list');
+      if (!state.projects || !state.projects.length) {
+        list.innerHTML = '<span style="color:#a1a1aa;">Nenhum projeto cadastrado.</span>';
+        return;
+      }
+      list.innerHTML = state.projects.map(p => {
+        const statusBadge = p.status === 'aprovado' ? '<span style="color:#4ade80; font-weight:600;">[Aprovado]</span>' :
+                            p.status === 'reprovado' ? '<span style="color:#f87171; font-weight:600;">[Reprovado]</span>' :
+                            '<span style="color:#fbbf24; font-weight:600;">[Em Votação]</span>';
         return `
-          <div class="project-card">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
-              <div>
-                <h3 style="font-size: 1.05rem; font-weight: 600;">${p.title}</h3>
-                <span style="font-size: 0.75rem; color: #a1a1aa;">Proposto por ${author} em ${p.createdAt} • Quórum: ${p.quorum}</span>
-              </div>
-              <span class="badge" style="border-color: ${statusColor}; color: ${statusColor};">${p.status}</span>
+          <div style="background:#09090b; border:1px solid #27272a; padding:1rem; border-radius:6px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <h3 style="font-size:1rem; font-weight:600;">${p.title} <span style="font-size:0.75rem; color:#60a5fa;">(${p.area})</span></h3>
+              ${statusBadge}
             </div>
-            <p style="font-size: 0.9rem; color: #d4d4d8; margin-bottom: 1rem;">${p.description}</p>
-            
-            <div style="font-size: 0.85rem; color: #a1a1aa; margin-bottom: 0.5rem;">
-              <strong>Votos (${approvals} Aprovações / ${rejections} Reprovações):</strong>
-            </div>
-
-            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin-bottom: 1rem;">
-              ${state.members.map(m => {
-                const v = p.votes[m.id];
-                const voteBadge = v === 'Aprovar' ? '<span style="color: #22c55e;">✔ Aprovar</span>' :
-                                  v === 'Reprovar' ? '<span style="color: #ef4444;">✖ Reprovar</span>' :
-                                  '<span style="color: #71717a;">Pendente</span>';
-                return `<div style="background: #141417; padding: 0.4rem 0.6rem; border-radius: 4px; font-size: 0.8rem;">
-                  <strong>${m.name}:</strong> ${voteBadge}
-                </div>`;
+            <p style="font-size:0.85rem; color:#a1a1aa; margin:0.5rem 0;">${p.desc}</p>
+            <div style="font-size:0.8rem; color:#71717a;">Responsável: ${p.owner}</div>
+            <div style="margin-top:0.75rem; padding-top:0.5rem; border-top:1px dashed #27272a; display:flex; gap:1rem; align-items:center;">
+              <span style="font-size:0.8rem; color:#a1a1aa;">Votos:</span>
+              ${MEMBERS.map(m => {
+                const v = p.votes ? p.votes[m] : null;
+                const label = v === true ? '👍' : v === false ? '👎' : '⏳';
+                return `
+                  <div style="display:flex; gap:4px; align-items:center; font-size:0.8rem;">
+                    <span>${m}: ${label}</span>
+                    ${p.status === 'votacao' ? `
+                      <button class="btn btn-sm btn-success" onclick="voteProject('${p.id}', '${m}', true)">Aprovar</button>
+                      <button class="btn btn-sm btn-danger" onclick="voteProject('${p.id}', '${m}', false)">Reprovar</button>
+                    ` : ''}
+                  </div>
+                `;
               }).join('')}
             </div>
-
-            ${p.status === 'Em Votação' ? `
-              <div class="vote-box">
-                <span style="font-size: 0.85rem; margin-right: auto;">Seu voto: <strong>${myVote || 'Nenhum'}</strong></span>
-                <button class="btn btn-success" onclick="castVote('${p.id}', 'Aprovar')">Aprovar</button>
-                <button class="btn btn-danger" onclick="castVote('${p.id}', 'Reprovar')">Reprovar</button>
-              </div>
-            ` : ''}
           </div>
         `;
       }).join('');
     }
-
-    function renderKanbanProjectSelect() {
-      const select = document.getElementById('kanbanProjectSelect');
-      const approved = state.projects.filter(p => p.status === 'Aprovado');
-
-      if (approved.length === 0) {
-        select.innerHTML = '<option value="">Nenhum projeto aprovado</option>';
-      } else {
-        select.innerHTML = approved.map(p => `<option value="${p.id}">${p.title}</option>`).join('');
-      }
+    function renderProjectSelect() {
+      const select = document.getElementById('task-project');
+      const activeProjs = (state.projects || []).filter(p => p.status === 'aprovado');
+      if (!activeProjs.length) { select.innerHTML = '<option value="">Nenhum projeto aprovado</option>'; return; }
+      select.innerHTML = activeProjs.map(p => `<option value="${p.id}">${p.title}</option>`).join('');
     }
-
-    function openAddTaskModal() {
-      const select = document.getElementById('kanbanProjectSelect');
-      if (!select.value) {
-        alert("Apenas projetos aprovados podem ter tarefas técnicas no Kanban.");
-        return;
-      }
-      document.getElementById('addTaskCard').classList.toggle('hidden');
-    }
-
-    function createTask(e) {
-      e.preventDefault();
-      const projId = document.getElementById('kanbanProjectSelect').value;
-      if (!projId) return;
-
-      const title = document.getElementById('taskTitle').value.trim();
-      const category = document.getElementById('taskCategory').value;
-      const column = document.getElementById('taskColumn').value;
-
-      const newTask = {
-        id: 'task_' + Date.now(),
-        projectId: projId,
-        title,
-        category,
-        column
-      };
-
-      state.tasks.push(newTask);
-      saveState();
-      document.getElementById('taskTitle').value = '';
-      document.getElementById('addTaskCard').classList.add('hidden');
-      renderKanban();
-    }
-
-    function moveTask(taskId, targetColumn) {
-      const task = state.tasks.find(t => t.id === taskId);
-      if (task) {
-        task.column = targetColumn;
-        saveState();
-        renderKanban();
-      }
-    }
-
-    function deleteTask(taskId) {
-      state.tasks = state.tasks.filter(t => t.id !== taskId);
-      saveState();
-      renderKanban();
-    }
-
     function renderKanban() {
-      const projId = document.getElementById('kanbanProjectSelect').value;
-      const filterCat = document.getElementById('kanbanCategoryFilter').value;
-
-      const cols = ["Implementar", "Inconcluído", "Para Análise", "Concluído"];
-      cols.forEach(col => {
-        document.getElementById(`col-${col}`).innerHTML = '';
-        document.getElementById(`count-${col}`).innerText = '0';
-      });
-
-      if (!projId) return;
-
-      let filteredTasks = state.tasks.filter(t => t.projectId === projId);
-      if (filterCat !== 'ALL') {
-        filteredTasks = filteredTasks.filter(t => t.category === filterCat);
-      }
-
-      cols.forEach(col => {
-        const colTasks = filteredTasks.filter(t => t.column === col);
-        document.getElementById(`count-${col}`).innerText = colTasks.length;
-
-        document.getElementById(`col-${col}`).innerHTML = colTasks.map(t => {
-          const catClass = 'cat-' + t.category.split(' ')[0];
+      COLS.forEach(col => {
+        const colContainer = document.getElementById(`col-${col}`);
+        const colTasks = (state.tasks || []).filter(t => t.status === col);
+        document.getElementById(`count-${col}`).textContent = colTasks.length;
+        colContainer.innerHTML = colTasks.map(t => {
+          const proj = (state.projects || []).find(p => p.id === t.projectId);
+          const projName = proj ? proj.title : 'Geral';
+          const isFirst = COLS.indexOf(col) === 0;
+          const isLast = COLS.indexOf(col) === COLS.length - 1;
           return `
-            <div class="task-card">
-              <span class="cat-tag ${catClass}">${t.category}</span>
-              <div style="font-size: 0.9rem; margin-bottom: 0.75rem; color: #f4f4f5;">${t.title}</div>
-              <div style="display: flex; gap: 0.25rem; flex-wrap: wrap; justify-content: space-between; align-items: center;">
-                <select onchange="moveTask('${t.id}', this.value)" style="padding: 0.2rem 0.4rem; font-size: 0.75rem; width: auto;">
-                  ${cols.map(c => `<option value="${c}" ${c === col ? 'selected' : ''}>${c}</option>`).join('')}
-                </select>
-                <button onclick="deleteTask('${t.id}')" class="btn btn-danger" style="padding: 0.2rem 0.5rem; font-size: 0.75rem;">✕</button>
+            <div class="task-card" draggable="true" ondragstart="handleDragStart(event, '${t.id}')">
+              <div class="task-header">
+                <span class="task-title">${t.title}</span>
+                <span class="task-tag">${t.area}</span>
+              </div>
+              <div class="task-meta">
+                <span>📁 ${projName}</span>
+                <span>👤 ${t.owner}</span>
+                ${t.pr ? `<span>🔗 ${t.pr}</span>` : ''}
+              </div>
+              ${t.subtasks && t.subtasks.length ? `
+                <div class="subtasks-list">
+                  ${t.subtasks.map(st => `
+                    <label class="subtask-item">
+                      <input type="checkbox" ${st.done ? 'checked' : ''} onchange="toggleSubtask('${t.id}', ${st.id})">
+                      <span style="${st.done ? 'text-decoration:line-through; color:#71717a;' : ''}">${st.text}</span>
+                    </label>
+                  `).join('')}
+                </div>
+              ` : ''}
+              <div class="task-actions">
+                <button class="btn btn-sm btn-secondary" onclick="openReviewModal('${t.id}')">Review (${t.comments ? t.comments.length : 0})</button>
+                <div style="display:flex; gap:4px;">
+                  ${!isFirst ? `<button class="btn btn-sm btn-secondary" onclick="moveTask('${t.id}', 'prev')">◀</button>` : ''}
+                  ${!isLast ? `<button class="btn btn-sm btn-secondary" onclick="moveTask('${t.id}', 'next')">▶</button>` : ''}
+                </div>
               </div>
             </div>
           `;
         }).join('');
       });
     }
-
-    function openMemberModal() {
-      const list = document.getElementById('memberFormList');
-      list.innerHTML = state.members.map(m => `
-        <div class="member-card" style="margin-bottom: 1rem;">
-          <h4 style="margin-bottom: 0.5rem; color: #3b82f6;">Membro ${m.id}</h4>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
-            <div>
-              <label>Nome</label>
-              <input type="text" id="m_name_${m.id}" value="${m.name}">
+    function renderMetrics() {
+      const projContainer = document.getElementById('metrics-projects');
+      const approvedProjs = (state.projects || []).filter(p => p.status === 'aprovado');
+      if (!approvedProjs.length) projContainer.innerHTML = '<span style="color:#a1a1aa; font-size:0.85rem;">Sem dados.</span>';
+      else {
+        projContainer.innerHTML = approvedProjs.map(p => {
+          const pTasks = (state.tasks || []).filter(t => t.projectId === p.id);
+          const total = pTasks.length;
+          const done = pTasks.filter(t => t.status === 'Concluído').length;
+          const pct = total ? Math.round((done / total) * 100) : 0;
+          return `
+            <div style="margin-bottom:1rem;">
+              <div style="display:flex; justify-content:space-between; font-size:0.85rem;"><span>${p.title}</span><span>${done}/${total} (${pct}%)</span></div>
+              <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${pct}%"></div></div>
             </div>
-            <div>
-              <label>Função</label>
-              <input type="text" id="m_role_${m.id}" value="${m.role}">
-            </div>
-            <div>
-              <label>Usuário GitHub</label>
-              <input type="text" id="m_github_${m.id}" value="${m.github}">
-            </div>
-            <div>
-              <label>PIN de Segurança</label>
-              <input type="password" id="m_pin_${m.id}" value="${m.pin}">
-            </div>
-          </div>
-        </div>
-      `).join('');
-      document.getElementById('memberConfigModal').classList.remove('hidden');
-    }
-
-    function closeMemberModal() {
-      document.getElementById('memberConfigModal').classList.add('hidden');
-    }
-
-    function saveMembersConfig() {
-      state.members.forEach(m => {
-        m.name = document.getElementById(`m_name_${m.id}`).value.trim() || m.name;
-        m.role = document.getElementById(`m_role_${m.id}`).value.trim() || m.role;
-        m.github = document.getElementById(`m_github_${m.id}`).value.trim() || m.github;
-        m.pin = document.getElementById(`m_pin_${m.id}`).value || m.pin;
-      });
-      saveState();
-      populateLoginMemberSelect();
-      updateSessionBadge();
-      closeMemberModal();
-    }
-
-    function openJsonModal() {
-      document.getElementById('jsonArea').value = JSON.stringify(state, null, 2);
-      document.getElementById('jsonModal').classList.remove('hidden');
-    }
-
-    function closeJsonModal() {
-      document.getElementById('jsonModal').classList.add('hidden');
-    }
-
-    function copyJsonText() {
-      const area = document.getElementById('jsonArea');
-      area.select();
-      document.execCommand('copy');
-      alert('JSON copiado para a área de transferência!');
-    }
-
-    function importJsonData() {
-      try {
-        const data = JSON.parse(document.getElementById('jsonArea').value);
-        if (data.members && data.projects && data.tasks) {
-          state = data;
-          saveState();
-          init();
-          closeJsonModal();
-          alert('Estado importado com sucesso!');
-        } else {
-          alert('Estrutura de JSON inválida.');
-        }
-      } catch (err) {
-        alert('Erro ao analisar o JSON: ' + err.message);
+          `;
+        }).join('');
       }
+      const areaContainer = document.getElementById('metrics-areas');
+      areaContainer.innerHTML = AREAS.map(area => {
+        const aTasks = (state.tasks || []).filter(t => t.area === area);
+        const total = aTasks.length;
+        const done = aTasks.filter(t => t.status === 'Concluído').length;
+        const pct = total ? Math.round((done / total) * 100) : 0;
+        return `
+          <div style="margin-bottom:0.75rem;">
+            <div style="display:flex; justify-content:space-between; font-size:0.85rem;"><span>${area}</span><span>${done}/${total} (${pct}%)</span></div>
+            <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${pct}%"></div></div>
+          </div>
+        `;
+      }).join('');
+      const memberContainer = document.getElementById('metrics-members');
+      memberContainer.innerHTML = MEMBERS.map(m => {
+        const mTasks = (state.tasks || []).filter(t => t.owner === m);
+        const total = mTasks.length;
+        const done = mTasks.filter(t => t.status === 'Concluído').length;
+        const active = total - done;
+        return `
+          <div style="margin-bottom:0.75rem; background:#09090b; padding:0.75rem; border-radius:6px; border:1px solid #27272a;">
+            <div style="font-weight:600; font-size:0.9rem;">${m}</div>
+            <div style="font-size:0.8rem; color:#a1a1aa; margin-top:4px;">Tarefas Ativas: ${active} | Concluídas: ${done} (Total: ${total})</div>
+          </div>
+        `;
+      }).join('');
     }
-
-    window.onload = init;
+    loadStateFromSupabase();
+    setupRealtime();
   </script>
 </body>
 </html>
