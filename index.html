@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TrioDev Workspace</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
+    body { background-color: #09090b; color: #f4f4f5; min-height: 100vh; display: flex; flex-direction: column; }
+    header { background: #141417; border-bottom: 1px solid #27272a; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; }
+    h1 { font-size: 1.25rem; font-weight: 700; color: #f4f4f5; }
+    .badge { background: #27272a; color: #3b82f6; padding: 0.25rem 0.6rem; border-radius: 4px; font-size: 0.8rem; border: 1px solid #3b82f6; }
+    .nav-tabs { display: flex; gap: 1rem; border-bottom: 1px solid #27272a; padding: 0 2rem; background: #141417; }
+    .tab-btn { background: none; border: none; color: #a1a1aa; padding: 0.8rem 1rem; font-weight: 600; cursor: pointer; border-bottom: 2px solid transparent; }
+    .tab-btn.active { color: #3b82f6; border-bottom-color: #3b82f6; }
+    .container { padding: 2rem; flex: 1; max-width: 1400px; margin: 0 auto; width: 100%; }
+    .card { background: #141417; border: 1px solid #27272a; border-radius: 8px; padding: 1.5rem; margin-bottom: 1.5rem; }
+    .card-title { font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem; color: #f4f4f5; display: flex; justify-content: space-between; align-items: center; }
+    .btn { background: #3b82f6; color: #fff; border: none; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; font-weight: 500; font-size: 0.9rem; }
+    .btn:hover { background: #2563eb; }
+    .btn-secondary { background: #27272a; color: #f4f4f5; }
+    .btn-secondary:hover { background: #3f3f46; }
+    .btn-danger { background: #ef4444; color: #fff; }
+    .btn-danger:hover { background: #dc2626; }
+    .btn-success { background: #22c55e; color: #fff; }
+    .btn-success:hover { background: #16a34a; }
+    .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; }
+    .form-group { margin-bottom: 1rem; }
+    label { display: block; font-size: 0.85rem; color: #a1a1aa; margin-bottom: 0.4rem; }
+    input, select, textarea { width: 100%; background: #09090b; border: 1px solid #27272a; color: #f4f4f5; padding: 0.6rem; border-radius: 6px; font-size: 0.9rem; }
+    input:focus, select:focus, textarea:focus { outline: none; border-color: #3b82f6; }
+    .overlay { position: fixed; inset: 0; background: rgba(9, 9, 11, 0.9); display: flex; justify-content: center; align-items: center; z-index: 1000; }
+    .modal { background: #141417; border: 1px solid #27272a; border-radius: 12px; padding: 2rem; width: 100%; max-width: 450px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5); }
+    .member-card { background: #09090b; border: 1px solid #27272a; border-radius: 6px; padding: 1rem; }
+    .member-card.active-member { border-color: #3b82f6; }
+    .project-card { background: #09090b; border: 1px solid #27272a; border-radius: 8px; padding: 1.25rem; margin-bottom: 1rem; }
+    .vote-box { display: flex; gap: 0.5rem; align-items: center; margin-top: 0.8rem; background: #141417; padding: 0.75rem; border-radius: 6px; }
+    .kanban-board { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; min-height: 500px; }
+    .kanban-col { background: #141417; border: 1px solid #27272a; border-radius: 8px; padding: 1rem; display: flex; flex-direction: column; }
+    .col-header { font-weight: 600; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid #27272a; display: flex; justify-content: space-between; align-items: center; }
+    .task-list { flex: 1; display: flex; flex-direction: column; gap: 0.75rem; }
+    .task-card { background: #09090b; border: 1px solid #27272a; border-radius: 6px; padding: 0.85rem; cursor: grab; }
+    .cat-tag { display: inline-block; font-size: 0.7rem; padding: 0.2rem 0.5rem; border-radius: 4px; font-weight: 600; text-transform: uppercase; margin-bottom: 0.4rem; }
+    .cat-API { background: #3b82f622; color: #60a5fa; border: 1px solid #3b82f644; }
+    .cat-Backend { background: #a855f722; color: #c084fc; border: 1px solid #a855f744; }
+    .cat-Frontend { background: #ec489922; color: #f472b6; border: 1px solid #ec489944; }
+    .cat-Banco { background: #f59e0b22; color: #fbbf24; border: 1px solid #f59e0b44; }
+    .cat-Data { background: #10b98122; color: #34d399; border: 1px solid #10b98144; }
+    .cat-DevOps { background: #06b6d422; color: #22d3ee; border: 1px solid #06b6d444; }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+  <div id="lockScreen" class="overlay">
+    <div class="modal">
+      <h2 style="margin-bottom: 1rem; text-align: center;">TrioDev Workspace</h2>
+      <p style="color: #a1a1aa; font-size: 0.9rem; text-align: center; margin-bottom: 1.5rem;">Selecione seu perfil e digite seu PIN de segurança</p>
+      <div class="form-group">
+        <label>Membro Autorizado</label>
+        <select id="loginMemberSelect"></select>
+      </div>
+      <div class="form-group">
+        <label>PIN de Segurança</label>
+        <input type="password" id="loginPinInput" maxlength="8" placeholder="Digite o PIN">
+      </div>
+      <div id="loginError" style="color: #ef4444; font-size: 0.85rem; margin-bottom: 1rem; display: none;">PIN incorreto. Tente novamente.</div>
+      <button class="btn" style="width: 100%;" onclick="unlockSession()">Desbloquear / Entrar</button>
+    </div>
+  </div>
+
+  <div id="jsonModal" class="overlay hidden">
+    <div class="modal" style="max-width: 650px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h3>Exportar / Importar Estado (JSON)</h3>
+        <button class="btn btn-secondary" onclick="closeJsonModal()">✕</button>
+      </div>
+      <div class="form-group">
+        <label>Dados em JSON</label>
+        <textarea id="jsonArea" rows="12" style="font-family: monospace; font-size: 0.8rem;"></textarea>
+      </div>
+      <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+        <button class="btn btn-secondary" onclick="copyJsonText()">Copiar JSON</button>
+        <button class="btn btn-success" onclick="importJsonData()">Importar Estado</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="memberConfigModal" class="overlay hidden">
+    <div class="modal" style="max-width: 550px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h3>Configurar Membros do TrioDev</h3>
+        <button class="btn btn-secondary" onclick="closeMemberModal()">✕</button>
+      </div>
+      <div id="memberFormList"></div>
+      <button class="btn" style="width: 100%; margin-top: 1rem;" onclick="saveMembersConfig()">Salvar Alterações</button>
+    </div>
+  </div>
+
+  <header>
+    <div style="display: flex; align-items: center; gap: 1rem;">
+      <h1>TrioDev Workspace</h1>
+      <span class="badge">Governança & Engenharia</span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 1rem;">
+      <span id="currentSessionBadge" style="font-size: 0.9rem; color: #a1a1aa;"></span>
+      <button class="btn btn-secondary" onclick="openMemberModal()">Gerenciar Membros</button>
+      <button class="btn btn-secondary" onclick="openJsonModal()">JSON State</button>
+      <button class="btn btn-danger" onclick="lockSession()">Bloquear</button>
+    </div>
+  </header>
+
+  <nav class="nav-tabs">
+    <button class="tab-btn active" onclick="switchTab('deliberation')">Propostas & Deliberação</button>
+    <button class="tab-btn" onclick="switchTab('kanban')">Quadro de Engenharia (Kanban)</button>
+  </nav>
+
+  <main class="container">
+    <section id="tab-deliberation">
+      <div class="grid-3">
+        <div class="card" style="grid-column: span 1;">
+          <h2 class="card-title">Propor Novo Projeto</h2>
+          <form id="projectForm" onsubmit="createProject(event)">
+            <div class="form-group">
+              <label>Nome do Projeto</label>
+              <input type="text" id="projTitle" required placeholder="Ex: API de Autenticação OAuth2">
+            </div>
+            <div class="form-group">
+              <label>Descrição</label>
+              <textarea id="projDesc" rows="3" required placeholder="Descreva os objetivos e escopo do projeto..."></textarea>
+            </div>
+            <div class="form-group">
+              <label>Quórum Exigido para Aprovação</label>
+              <select id="projQuorum">
+                <option value="2/3">Maioria Simples (2 / 3 membros)</option>
+                <option value="3/3">Unanimidade (3 / 3 membros)</option>
+              </select>
+            </div>
+            <button type="submit" class="btn" style="width: 100%;">Submeter Proposta</button>
+          </form>
+        </div>
+
+        <div class="card" style="grid-column: span 2;">
+          <h2 class="card-title">Painel de Deliberação e Votação</h2>
+          <div id="proposalsList">
+            <p style="color: #a1a1aa; font-size: 0.9rem;">Nenhuma proposta cadastrada ainda.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="tab-kanban" class="hidden">
+      <div class="card">
+        <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 1rem;">
+          <div>
+            <label>Projeto Aprovado Selecionado</label>
+            <select id="kanbanProjectSelect" style="min-width: 250px;" onchange="renderKanban()"></select>
+          </div>
+          <div>
+            <label>Filtrar por Categoria</label>
+            <select id="kanbanCategoryFilter" onchange="renderKanban()">
+              <option value="ALL">Todas as Categorias</option>
+              <option value="API">API</option>
+              <option value="Backend">Backend</option>
+              <option value="Frontend">Frontend</option>
+              <option value="Banco de Dados">Banco de Dados</option>
+              <option value="Data / ML">Data / ML</option>
+              <option value="DevOps">DevOps</option>
+            </select>
+          </div>
+          <button class="btn btn-success" onclick="openAddTaskModal()">+ Nova Tarefa Técnica</button>
+        </div>
+      </div>
+
+      <div id="addTaskCard" class="card hidden">
+        <h3 class="card-title">Adicionar Tarefa Técnica</h3>
+        <form onsubmit="createTask(event)" style="display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 1rem; align-items: end;">
+          <div class="form-group" style="margin: 0;">
+            <label>Título da Tarefa</label>
+            <input type="text" id="taskTitle" required placeholder="Ex: Criar endpoints de login e refresh token">
+          </div>
+          <div class="form-group" style="margin: 0;">
+            <label>Categoria</label>
+            <select id="taskCategory">
+              <option value="API">API</option>
+              <option value="Backend">Backend</option>
+              <option value="Frontend">Frontend</option>
+              <option value="Banco de Dados">Banco de Dados</option>
+              <option value="Data / ML">Data / ML</option>
+              <option value="DevOps">DevOps</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin: 0;">
+            <label>Estado Inicial</label>
+            <select id="taskColumn">
+              <option value="Implementar">Implementar</option>
+              <option value="Inconcluído">Inconcluído</option>
+              <option value="Para Análise">Para Análise</option>
+              <option value="Concluído">Concluído</option>
+            </select>
+          </div>
+          <button type="submit" class="btn">Salvar Tarefa</button>
+        </form>
+      </div>
+
+      <div class="kanban-board">
+        <div class="kanban-col">
+          <div class="col-header">
+            <span>Implementar</span>
+            <span id="count-Implementar" class="badge">0</span>
+          </div>
+          <div id="col-Implementar" class="task-list"></div>
+        </div>
+        <div class="kanban-col">
+          <div class="col-header">
+            <span>Inconcluído</span>
+            <span id="count-Inconcluído" class="badge">0</span>
+          </div>
+          <div id="col-Inconcluído" class="task-list"></div>
+        </div>
+        <div class="kanban-col">
+          <div class="col-header">
+            <span>Para Análise</span>
+            <span id="count-Para Análise" class="badge">0</span>
+          </div>
+          <div id="col-Para Análise" class="task-list"></div>
+        </div>
+        <div class="kanban-col">
+          <div class="col-header">
+            <span>Concluído</span>
+            <span id="count-Concluído" class="badge">0</span>
+          </div>
+          <div id="col-Concluído" class="task-list"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const DEFAULT_MEMBERS = [
+      { id: 1, name: "Michael Santos", role: "Líder Técnico & Engenheiro", github: "michaelsa5", pin: "1234" },
+      { id: 2, name: "Membro 2", role: "Desenvolvedor Backend", github: "membro2", pin: "1234" },
+      { id: 3, name: "Membro 3", role: "Desenvolvedor Frontend / QA", github: "membro3", pin: "1234" }
+    ];
+
+    let state = {
+      members: JSON.parse(localStorage.getItem('triodev_members')) || DEFAULT_MEMBERS,
+      currentMemberId: null,
+      projects: JSON.parse(localStorage.getItem('triodev_projects')) || [],
+      tasks: JSON.parse(localStorage.getItem('triodev_tasks')) || []
+    };
+
+    function saveState() {
+      localStorage.setItem('triodev_members', JSON.stringify(state.members));
+      localStorage.setItem('triodev_projects', JSON.stringify(state.projects));
+      localStorage.setItem('triodev_tasks', JSON.stringify(state.tasks));
+    }
+
+    function init() {
+      populateLoginMemberSelect();
+      renderProposals();
+      renderKanbanProjectSelect();
+    }
+
+    function populateLoginMemberSelect() {
+      const select = document.getElementById('loginMemberSelect');
+      select.innerHTML = state.members.map(m => `<option value="${m.id}">${m.name} (${m.role})</option>`).join('');
+    }
+
+    function unlockSession() {
+      const selectedId = parseInt(document.getElementById('loginMemberSelect').value);
+      const pin = document.getElementById('loginPinInput').value;
+      const member = state.members.find(m => m.id === selectedId);
+
+      if (member && member.pin === pin) {
+        state.currentMemberId = selectedId;
+        document.getElementById('loginError').style.display = 'none';
+        document.getElementById('lockScreen').classList.add('hidden');
+        document.getElementById('loginPinInput').value = '';
+        updateSessionBadge();
+        renderProposals();
+      } else {
+        document.getElementById('loginError').style.display = 'block';
+      }
+    }
+
+    function lockSession() {
+      state.currentMemberId = null;
+      document.getElementById('lockScreen').classList.remove('hidden');
+    }
+
+    function updateSessionBadge() {
+      const member = state.members.find(m => m.id === state.currentMemberId);
+      if (member) {
+        document.getElementById('currentSessionBadge').innerHTML = `Sessão ativa: <strong>${member.name}</strong> (@${member.github})`;
+      }
+    }
+
+    function switchTab(tab) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      if (tab === 'deliberation') {
+        document.querySelectorAll('.tab-btn')[0].classList.add('active');
+        document.getElementById('tab-deliberation').classList.remove('hidden');
+        document.getElementById('tab-kanban').classList.add('hidden');
+        renderProposals();
+      } else {
+        document.querySelectorAll('.tab-btn')[1].classList.add('active');
+        document.getElementById('tab-deliberation').classList.add('hidden');
+        document.getElementById('tab-kanban').classList.remove('hidden');
+        renderKanbanProjectSelect();
+        renderKanban();
+      }
+    }
+
+    function createProject(e) {
+      e.preventDefault();
+      const title = document.getElementById('projTitle').value.trim();
+      const description = document.getElementById('projDesc').value.trim();
+      const quorum = document.getElementById('projQuorum').value;
+
+      const newProj = {
+        id: 'proj_' + Date.now(),
+        title,
+        description,
+        quorum,
+        authorId: state.currentMemberId,
+        votes: {},
+        status: 'Em Votação',
+        createdAt: new Date().toLocaleDateString('pt-BR')
+      };
+
+      state.projects.push(newProj);
+      saveState();
+      document.getElementById('projectForm').reset();
+      renderProposals();
+    }
+
+    function castVote(projId, vote) {
+      const proj = state.projects.find(p => p.id === projId);
+      if (!proj || proj.status !== 'Em Votação') return;
+
+      proj.votes[state.currentMemberId] = vote;
+
+      const approvals = Object.values(proj.votes).filter(v => v === 'Aprovar').length;
+      const rejections = Object.values(proj.votes).filter(v => v === 'Reprovar').length;
+
+      const targetApprovals = proj.quorum === '2/3' ? 2 : 3;
+
+      if (approvals >= targetApprovals) {
+        proj.status = 'Aprovado';
+      } else if (rejections > (3 - targetApprovals)) {
+        proj.status = 'Reprovado';
+      }
+
+      saveState();
+      renderProposals();
+    }
+
+    function renderProposals() {
+      const container = document.getElementById('proposalsList');
+      if (state.projects.length === 0) {
+        container.innerHTML = '<p style="color: #a1a1aa; font-size: 0.9rem;">Nenhuma proposta cadastrada ainda.</p>';
+        return;
+      }
+
+      container.innerHTML = state.projects.map(p => {
+        const author = state.members.find(m => m.id === p.authorId)?.name || 'Desconhecido';
+        const approvals = Object.values(p.votes).filter(v => v === 'Aprovar').length;
+        const rejections = Object.values(p.votes).filter(v => v === 'Reprovar').length;
+
+        let statusColor = '#3b82f6';
+        if (p.status === 'Aprovado') statusColor = '#22c55e';
+        if (p.status === 'Reprovado') statusColor = '#ef4444';
+
+        const myVote = p.votes[state.currentMemberId];
+
+        return `
+          <div class="project-card">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+              <div>
+                <h3 style="font-size: 1.05rem; font-weight: 600;">${p.title}</h3>
+                <span style="font-size: 0.75rem; color: #a1a1aa;">Proposto por ${author} em ${p.createdAt} • Quórum: ${p.quorum}</span>
+              </div>
+              <span class="badge" style="border-color: ${statusColor}; color: ${statusColor};">${p.status}</span>
+            </div>
+            <p style="font-size: 0.9rem; color: #d4d4d8; margin-bottom: 1rem;">${p.description}</p>
+            
+            <div style="font-size: 0.85rem; color: #a1a1aa; margin-bottom: 0.5rem;">
+              <strong>Votos (${approvals} Aprovações / ${rejections} Reprovações):</strong>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin-bottom: 1rem;">
+              ${state.members.map(m => {
+                const v = p.votes[m.id];
+                const voteBadge = v === 'Aprovar' ? '<span style="color: #22c55e;">✔ Aprovar</span>' :
+                                  v === 'Reprovar' ? '<span style="color: #ef4444;">✖ Reprovar</span>' :
+                                  '<span style="color: #71717a;">Pendente</span>';
+                return `<div style="background: #141417; padding: 0.4rem 0.6rem; border-radius: 4px; font-size: 0.8rem;">
+                  <strong>${m.name}:</strong> ${voteBadge}
+                </div>`;
+              }).join('')}
+            </div>
+
+            ${p.status === 'Em Votação' ? `
+              <div class="vote-box">
+                <span style="font-size: 0.85rem; margin-right: auto;">Seu voto: <strong>${myVote || 'Nenhum'}</strong></span>
+                <button class="btn btn-success" onclick="castVote('${p.id}', 'Aprovar')">Aprovar</button>
+                <button class="btn btn-danger" onclick="castVote('${p.id}', 'Reprovar')">Reprovar</button>
+              </div>
+            ` : ''}
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderKanbanProjectSelect() {
+      const select = document.getElementById('kanbanProjectSelect');
+      const approved = state.projects.filter(p => p.status === 'Aprovado');
+
+      if (approved.length === 0) {
+        select.innerHTML = '<option value="">Nenhum projeto aprovado</option>';
+      } else {
+        select.innerHTML = approved.map(p => `<option value="${p.id}">${p.title}</option>`).join('');
+      }
+    }
+
+    function openAddTaskModal() {
+      const select = document.getElementById('kanbanProjectSelect');
+      if (!select.value) {
+        alert("Apenas projetos aprovados podem ter tarefas técnicas no Kanban.");
+        return;
+      }
+      document.getElementById('addTaskCard').classList.toggle('hidden');
+    }
+
+    function createTask(e) {
+      e.preventDefault();
+      const projId = document.getElementById('kanbanProjectSelect').value;
+      if (!projId) return;
+
+      const title = document.getElementById('taskTitle').value.trim();
+      const category = document.getElementById('taskCategory').value;
+      const column = document.getElementById('taskColumn').value;
+
+      const newTask = {
+        id: 'task_' + Date.now(),
+        projectId: projId,
+        title,
+        category,
+        column
+      };
+
+      state.tasks.push(newTask);
+      saveState();
+      document.getElementById('taskTitle').value = '';
+      document.getElementById('addTaskCard').classList.add('hidden');
+      renderKanban();
+    }
+
+    function moveTask(taskId, targetColumn) {
+      const task = state.tasks.find(t => t.id === taskId);
+      if (task) {
+        task.column = targetColumn;
+        saveState();
+        renderKanban();
+      }
+    }
+
+    function deleteTask(taskId) {
+      state.tasks = state.tasks.filter(t => t.id !== taskId);
+      saveState();
+      renderKanban();
+    }
+
+    function renderKanban() {
+      const projId = document.getElementById('kanbanProjectSelect').value;
+      const filterCat = document.getElementById('kanbanCategoryFilter').value;
+
+      const cols = ["Implementar", "Inconcluído", "Para Análise", "Concluído"];
+      cols.forEach(col => {
+        document.getElementById(`col-${col}`).innerHTML = '';
+        document.getElementById(`count-${col}`).innerText = '0';
+      });
+
+      if (!projId) return;
+
+      let filteredTasks = state.tasks.filter(t => t.projectId === projId);
+      if (filterCat !== 'ALL') {
+        filteredTasks = filteredTasks.filter(t => t.category === filterCat);
+      }
+
+      cols.forEach(col => {
+        const colTasks = filteredTasks.filter(t => t.column === col);
+        document.getElementById(`count-${col}`).innerText = colTasks.length;
+
+        document.getElementById(`col-${col}`).innerHTML = colTasks.map(t => {
+          const catClass = 'cat-' + t.category.split(' ')[0];
+          return `
+            <div class="task-card">
+              <span class="cat-tag ${catClass}">${t.category}</span>
+              <div style="font-size: 0.9rem; margin-bottom: 0.75rem; color: #f4f4f5;">${t.title}</div>
+              <div style="display: flex; gap: 0.25rem; flex-wrap: wrap; justify-content: space-between; align-items: center;">
+                <select onchange="moveTask('${t.id}', this.value)" style="padding: 0.2rem 0.4rem; font-size: 0.75rem; width: auto;">
+                  ${cols.map(c => `<option value="${c}" ${c === col ? 'selected' : ''}>${c}</option>`).join('')}
+                </select>
+                <button onclick="deleteTask('${t.id}')" class="btn btn-danger" style="padding: 0.2rem 0.5rem; font-size: 0.75rem;">✕</button>
+              </div>
+            </div>
+          `;
+        }).join('');
+      });
+    }
+
+    function openMemberModal() {
+      const list = document.getElementById('memberFormList');
+      list.innerHTML = state.members.map(m => `
+        <div class="member-card" style="margin-bottom: 1rem;">
+          <h4 style="margin-bottom: 0.5rem; color: #3b82f6;">Membro ${m.id}</h4>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+            <div>
+              <label>Nome</label>
+              <input type="text" id="m_name_${m.id}" value="${m.name}">
+            </div>
+            <div>
+              <label>Função</label>
+              <input type="text" id="m_role_${m.id}" value="${m.role}">
+            </div>
+            <div>
+              <label>Usuário GitHub</label>
+              <input type="text" id="m_github_${m.id}" value="${m.github}">
+            </div>
+            <div>
+              <label>PIN de Segurança</label>
+              <input type="password" id="m_pin_${m.id}" value="${m.pin}">
+            </div>
+          </div>
+        </div>
+      `).join('');
+      document.getElementById('memberConfigModal').classList.remove('hidden');
+    }
+
+    function closeMemberModal() {
+      document.getElementById('memberConfigModal').classList.add('hidden');
+    }
+
+    function saveMembersConfig() {
+      state.members.forEach(m => {
+        m.name = document.getElementById(`m_name_${m.id}`).value.trim() || m.name;
+        m.role = document.getElementById(`m_role_${m.id}`).value.trim() || m.role;
+        m.github = document.getElementById(`m_github_${m.id}`).value.trim() || m.github;
+        m.pin = document.getElementById(`m_pin_${m.id}`).value || m.pin;
+      });
+      saveState();
+      populateLoginMemberSelect();
+      updateSessionBadge();
+      closeMemberModal();
+    }
+
+    function openJsonModal() {
+      document.getElementById('jsonArea').value = JSON.stringify(state, null, 2);
+      document.getElementById('jsonModal').classList.remove('hidden');
+    }
+
+    function closeJsonModal() {
+      document.getElementById('jsonModal').classList.add('hidden');
+    }
+
+    function copyJsonText() {
+      const area = document.getElementById('jsonArea');
+      area.select();
+      document.execCommand('copy');
+      alert('JSON copiado para a área de transferência!');
+    }
+
+    function importJsonData() {
+      try {
+        const data = JSON.parse(document.getElementById('jsonArea').value);
+        if (data.members && data.projects && data.tasks) {
+          state = data;
+          saveState();
+          init();
+          closeJsonModal();
+          alert('Estado importado com sucesso!');
+        } else {
+          alert('Estrutura de JSON inválida.');
+        }
+      } catch (err) {
+        alert('Erro ao analisar o JSON: ' + err.message);
+      }
+    }
+
+    window.onload = init;
+  </script>
+</body>
+</html>
